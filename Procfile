@@ -1,1 +1,1 @@
-web: sh setup.sh && streamlit run Machine_Learning_App.py
+web: sh setup.sh && streamlit run Introduction.py
