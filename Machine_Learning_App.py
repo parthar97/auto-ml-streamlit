@@ -35,8 +35,6 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from xgboost import XGBRegressor
-from xgboost import XGBClassifier
 from imblearn.metrics import geometric_mean_score
 from sklearn.ensemble import ExtraTreesClassifier
 
@@ -121,7 +119,7 @@ try:
         yy=st.multiselect('Select Y',[y for y in quant if y not in xx])
         test_size=st.sidebar.slider('Test Size',0.0,0.5,0.2)
         reg_type=[None,'Polynomial Regression','Decision Tree',
-          'Random Forest','KNN','Lasso','PLS','Elastic Net','XGBoost']
+          'Random Forest','KNN','Lasso','PLS','Elastic Net']
         regtype=st.selectbox('Choose Algorithm',reg_type)
         for col in not_quant_col:
             le = preprocessing.LabelEncoder()
@@ -139,7 +137,7 @@ try:
         yy=st.selectbox('Select Y',qual1)
         test_size=st.sidebar.slider('Test Size',0.0,0.5,0.2)
         reg_type=[None,'Logistic Regression','KNN Classifier','Gaussian NB Classifier',
-              'Decision Tree Classifier','Random Forest Classifier','Support Vector Classifier','XGBoost Classifier','Extra Trees Classifier']
+              'Decision Tree Classifier','Random Forest Classifier','Support Vector Classifier','Extra Trees Classifier']
         regtype=st.selectbox('Choose Algorithm',reg_type)
 
     @st.experimental_memo
@@ -371,39 +369,6 @@ try:
 
               return tuned_enet_model,tr_r2_enet,te_r2_enet,enet_model.alpha_
 
-    ######################## 8) XGBoost Regressor ########################
-    @st.experimental_memo(suppress_st_warning=True)
-    def xgb(X_train,X_test,y_train,y_test,n_splits,grid_search_xg):     
-            import warnings
-            warnings.filterwarnings("ignore")
-            if grid_search_xg=='simple':
-                params = {'booster':['gbtree'],
-                'eta':[float(x) for x in np.linspace(0.01,0.1,5)], # a.k.a learning_rate
-                      'max_depth':[int(x) for x in np.linspace(3,5,2)],'min_child_weight': [int(x) for x in np.linspace(1,10,3)],
-                      'subsample': [float(x) for x in np.linspace(0.6,1,2)],'colsample_bytree': [float(x) for x in np.linspace(0.6,1,2)],}
-
-            if grid_search_xg=='exhaustive':
-                params = {'booster':['gbtree','dart'],
-                'eta':[float(x) for x in np.linspace(0.01,0.1,8)], # a.k.a learning_rate
-                      'max_depth':[int(x) for x in np.linspace(3,7,3)],'min_child_weight': [int(x) for x in np.linspace(1,10,3)],
-                      'subsample': [float(x) for x in np.linspace(0.6,1,3)],'colsample_bytree': [float(x) for x in np.linspace(0.6,1,3)],}
-
-            gs_xg = RandomizedSearchCV(XGBRegressor(random_state=0),param_distributions=params,cv=n_splits, n_jobs=-1)
-            xg_model=gs_xg.fit(X_train, y_train)
-
-            tuned_xg_model= XGBRegressor(booster=gs_xg.best_params_['booster'],eta=gs_xg.best_params_['eta'],
-            max_depth=gs_xg.best_params_['max_depth'],min_child_weight=gs_xg.best_params_['min_child_weight'],
-            subsample=gs_xg.best_params_['subsample'],colsample_bytree=gs_xg.best_params_['colsample_bytree'],random_state=0)
-
-            tuned_xg_model.fit(X_train,y_train)  
-
-            y_pred_test_xg=tuned_xg_model.predict(X_test)
-            y_pred_train_xg=tuned_xg_model.predict(X_train)
-
-            tr_r2=r2_score(y_train, y_pred_train_xg)
-            te_r2=r2_score(y_test, y_pred_test_xg)
-
-            return tuned_xg_model, tr_r2,te_r2, gs_xg.best_params_
     ######################################################################################################
         ######################## 1) logistic_regression ########################
     @st.experimental_memo(suppress_st_warning=True)
@@ -586,37 +551,6 @@ try:
             y_pred_train_svc = tuned_svc_model.predict(X_train)
 
             return tuned_svc_model,y_pred_train_svc,y_pred_test_svc,scaler,model.best_params_
-
-    ######################## 7) XGBoost Classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
-    def xgb_cla(X_train,X_test,y_train,y_test,n_splits,grid_search_xgc):     
-            import warnings
-            warnings.filterwarnings("ignore")
-            if grid_search_xgc=='simple':
-                params = {'booster':['gbtree'],
-                'eta':[float(x) for x in np.linspace(0.01,0.1,3)], # a.k.a learning_rate
-                      'max_depth':[int(x) for x in np.linspace(3,5,2)],'min_child_weight': [int(x) for x in np.linspace(1,10,3)],
-                      'subsample': [float(x) for x in np.linspace(0.6,1,3)],'colsample_bytree': [float(x) for x in np.linspace(0.6,1,3)],}
-
-            if grid_search_xgc=='exhaustive':
-                params = {'booster':['gbtree','dart'],
-                'eta':[float(x) for x in np.linspace(0.01,0.1,5)], # a.k.a learning_rate
-                      'max_depth':[int(x) for x in np.linspace(3,5,3)],'min_child_weight': [int(x) for x in np.linspace(1,10,3)],
-                      'subsample': [float(x) for x in np.linspace(0.6,1,4)],'colsample_bytree': [float(x) for x in np.linspace(0.6,1,4)],}
-
-            gs_xgc = RandomizedSearchCV(XGBClassifier(random_state=0),param_distributions=params,cv=n_splits, n_jobs=-1,random_state=0)
-            xgc_model=gs_xgc.fit(X_train, y_train)
-
-            tuned_xgc_model= XGBClassifier(booster=gs_xgc.best_params_['booster'],eta=gs_xgc.best_params_['eta'],
-            max_depth=gs_xgc.best_params_['max_depth'],min_child_weight=gs_xgc.best_params_['min_child_weight'],
-            subsample=gs_xgc.best_params_['subsample'],colsample_bytree=gs_xgc.best_params_['colsample_bytree'],random_state=0)
-
-            tuned_xgc_model.fit(X_train,y_train)  
-
-            y_pred_test_xgc=tuned_xgc_model.predict(X_test)
-            y_pred_train_xgc=tuned_xgc_model.predict(X_train)
-
-            return tuned_xgc_model,y_pred_train_xgc,y_pred_test_xgc, gs_xgc.best_params_
 
     ######################## 8) Extra Trees Classifier ########################
     @st.experimental_memo(suppress_st_warning=True)
@@ -969,43 +903,6 @@ try:
                         if result7 is not None:
                             st.download_button(label='Download Predictions',data=result7,file_name='Elastic_Net_Reg_Predictions.csv',mime='text/csv')       
                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
-                else:
-                    st.warning('Upload data for predictions')
-
-    if regtype=='XGBoost':
-            n_splits=st.sidebar.number_input('n_splits',2,50)
-            grid_search_xg=st.sidebar.radio('Random Search',['simple','exhaustive'])
-            rmp7=st.radio('Run Model',['n','y'])
-            if rmp7=='y':
-                tuned_xg_model,tr_r2,te_r2,best_params=xgb(X_train,X_test,y_train,y_test,n_splits,grid_search_xg)
-                st.write('XGBoost Regressor Train R2 Score: ', tr_r2)
-                st.write('XGBoost Regressor Test R2 Score: ', te_r2)
-                st.write('XGBoost Regressor Best Parameters: ', best_params)
-
-                count=0
-                uploaded_file8 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
-                def read_file8(uploaded_file8):
-                    dat=csv.read_csv(uploaded_file8)
-                    data2=dat.to_pandas()  
-                    return data2
-                if uploaded_file8 is not None:
-                     X1=read_file8(uploaded_file8)
-                     count+=1
-                     try:
-                        @st.experimental_memo
-                        def download_results8(X1,y_test):
-                              y_pred_xg_final=tuned_xg_model.predict(X1)
-                              y_pred_xg_final=pd.DataFrame(y_pred_xg_final,columns=y_test.columns+'_pred')
-                              result8=pd.concat([X1,y_pred_xg_final],axis=1)
-                              return result8.to_csv().encode('utf-8')
-
-                        result8=download_results8(X1,y_test)
-                        st.success('Success')
-                        if result8 is not None:
-                            st.download_button(label='Download Predictions',data=result8,file_name='XGBoost_Reg_Predictions.csv',mime='text/csv')       
-                     except:
                         st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
@@ -1394,70 +1291,7 @@ try:
                         st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
-
-    if regtype=='XGBoost Classifier':
-            n_splits=st.sidebar.number_input('n_splits',2,50)
-            grid_search_xgc=st.sidebar.radio('Random Search',['simple','exhaustive'])
-            rmp77=st.radio('Run Model',['n','y'])
-            if rmp77=='y':
-                tuned_xgc_model,y_pred_train_xgc,y_pred_test_xgc,best_params=xgb_cla(X_train,X_test,y_train,y_test,n_splits,grid_search_xgc)
-                st.text('Classification Report Train Data:\n\n '+classification_report(y_train,y_pred_train_xgc,zero_division=0))
-                st.text('Classification Report Test Data:\n\n '+classification_report(y_test,y_pred_test_xgc,zero_division=0))
-                st.write('***XGBoost Classifier Best Parameters:*** ', best_params)
-                g_mean_pred_train_xgc=geometric_mean_score(y_train.values.ravel(),y_pred_train_xgc,average='weighted')
-                g_mean_pred_test_xgc=geometric_mean_score(y_test.values.ravel(),y_pred_test_xgc,average='weighted')
-                st.write('***XGBoost Classifier Train Geometric Mean:*** ', g_mean_pred_train_xgc)
-                st.write('***XGBoost Classifier Test Geometric Mean:*** ', g_mean_pred_test_xgc)
-
-                cmat=confusion_matrix(y_test, y_pred_test_xgc)
-                plt.figure(figsize=(10,10))
-                ax = sns.heatmap(cmat/np.sum(cmat), annot=True,fmt='.2%', cmap='Blues')
-                ax.set_title('Confusion Matrix\n');
-                ax.set_xlabel('Predicted Category')
-                ax.set_ylabel('Actual Category ');
-                a=[]
-                for i in range(len(y_test.columns.sort_values())):
-                    a.append(y_test.columns.sort_values()[i])
-                label=np.sort(y_test[a[0]].unique())
-                ax.xaxis.set_ticklabels(label)
-                ax.yaxis.set_ticklabels(label)
-                plt.xticks(rotation=90)
-                plt.yticks(rotation=0)
-                plt.tight_layout()
-                st.pyplot(plt)
-
-                count=0
-                uploaded_file7 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
-                def read_file7(uploaded_file7):
-                    dat=csv.read_csv(uploaded_file7)
-                    data2=dat.to_pandas()  
-                    return data2
-                if uploaded_file7 is not None:
-                     X2=read_file7(uploaded_file7)
-                     count+=1
-                     y_test2=y_test
-                     try:
-                        @st.experimental_memo
-                        def download_results7(X2,y_test2):
-                              y_pred_xgc_final=tuned_xgc_model.predict(X2)
-                              y_pred_xgc_final=pd.DataFrame(y_pred_xgc_final,columns=y_test2.columns+'_pred')
-                              result7=pd.concat([X2,y_pred_xgc_final],axis=1)
-                              y_pred_prob_xgc_final=tuned_xgc_model.predict_proba(X2)
-                              y_pred_prob_xgc_final=pd.DataFrame(y_pred_prob_xgc_final,columns=label)                                                                              
-                              result77=pd.concat([X2,y_pred_prob_xgc_final],axis=1)                        
-                              return result7.to_csv().encode('utf-8'),result77.to_csv().encode('utf-8')
-
-                        result7,result77=download_results7(X2,y_test2)
-                        st.success('Success')
-                        if result7 is not None and result77 is not None:
-                            st.download_button(label='Download Predictions',data=result7,file_name='XGBoost_Classifier_Predictions.csv',mime='text/csv')       
-                            st.download_button(label='Download Probability Predictions',data=result77,file_name='XGBoost_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
-                else:
-                    st.warning('Upload data for predictions')
-
+                    
     if regtype=='Extra Trees Classifier':
             n_splits=st.sidebar.number_input('n_splits',2,50)
             grid_search_et=st.sidebar.radio('Random Search',['simple','exhaustive'])
