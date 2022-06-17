@@ -14,7 +14,10 @@ uploaded_file = st.sidebar.file_uploader("Upload your input CSV/XLSX file", type
 def read_file(uploaded_file):
         try:
             dat=csv.read_csv(uploaded_file)
-            data2=dat.to_pandas()  
+            data2=dat.to_pandas(self_destruct=True)
+            del dat
+            ### 1. read using pyarrow for faster processing time
+            ### 2. convert to pandas and delete 'dat' to reduce cache
             data2.dropna()
         except:
             data2=pd.read_excel(uploaded_file)
