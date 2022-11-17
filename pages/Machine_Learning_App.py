@@ -1406,5 +1406,5 @@ st.write('### **About**')
 st.info(
  """
             Created by:
-            [Parthasarathy Ramamoorthy](https://www.linkedin.com/in/parthasarathyr97/) (Analytics Specialist @ Premium Peanut LLC)
+            [Parthasarathy Ramamoorthy](https://www.linkedin.com/in/parthasarathyr97/) (Data Scientist @ Walmart Global Tech)
         """)
