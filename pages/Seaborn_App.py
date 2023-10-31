@@ -10,7 +10,7 @@ with st.expander('Tutorial'):
     st.video('https://www.youtube.com/watch?v=ElMLZ7BoSpg')
 uploaded_file = st.sidebar.file_uploader("Upload your input CSV/XLSX file", type=["csv","xlsx"])
 # if uploaded_file is not None:
-@st.experimental_memo
+@st.cache_data
 def read_file(uploaded_file):
         try:
             dat=csv.read_csv(uploaded_file)

@@ -46,7 +46,7 @@ from sklearn.decomposition import PCA
 
 st.write("## **Machine Learning App** ")
 uploaded_file = st.sidebar.file_uploader("Upload your input CSV/XLSX file", type=["csv","xlsx"])
-@st.experimental_memo
+@st.cache_data
 def read_file(uploaded_file):
     try:
         dat=csv.read_csv(uploaded_file)
@@ -90,7 +90,7 @@ def read_file(uploaded_file):
 try:
     data2,quant,qual,quant1,qual1,quall=read_file(uploaded_file)
 
-    reg_cla=st.selectbox('Choose Dimensionality Reduction/Regression/Classification',[None,'Dimensionality Reduction','Regression','Classification'])
+    reg_cla=st.selectbox('Choose Dimensionality Reduction/Regression/Classification',['None','Dimensionality Reduction','Regression','Classification'])
 
     if reg_cla=='Dimensionality Reduction':
         container = st.container()
@@ -105,7 +105,7 @@ try:
             xx = container.multiselect("Select X:",all_col)
         yy=st.multiselect('Select Y',[y for y in quant if y not in xx])
         test_size=st.sidebar.slider('Test Size',0.0,0.5,0.2)
-        reg_type=[None,'Principal Component Analysis']
+        reg_type=['None','Principal Component Analysis']
         regtype=st.selectbox('Choose Algorithm',reg_type)
         for col in not_quant_col:
             le = preprocessing.LabelEncoder()
@@ -125,8 +125,8 @@ try:
             xx = container.multiselect("Select X:",all_col)
         yy=st.multiselect('Select Y',[y for y in quant if y not in xx])
         test_size=st.sidebar.slider('Test Size',0.0,0.5,0.2)
-        reg_type=[None,'Polynomial Regression','Decision Tree',
-          'Random Forest','KNN','Lasso','PLS','Elastic Net']
+        reg_type=['None','Polynomial Regression','Decision Tree',
+            'Random Forest','KNN','Lasso','PLS','Elastic Net']
         regtype=st.selectbox('Choose Algorithm',reg_type)
         for col in not_quant_col:
             le = preprocessing.LabelEncoder()
@@ -143,11 +143,11 @@ try:
             xx = container.multiselect("Select X:",quant)
         yy=st.selectbox('Select Y',qual1)
         test_size=st.sidebar.slider('Test Size',0.0,0.5,0.2)
-        reg_type=[None,'Logistic Regression','KNN Classifier','Gaussian NB Classifier',
-              'Decision Tree Classifier','Random Forest Classifier','Support Vector Classifier','Extra Trees Classifier']
+        reg_type=['None','Logistic Regression','KNN Classifier','Gaussian NB Classifier',
+                'Decision Tree Classifier','Random Forest Classifier','Support Vector Classifier','Extra Trees Classifier']
         regtype=st.selectbox('Choose Algorithm',reg_type)
 
-    @st.experimental_memo
+    @st.cache_data
     def read_col(data2,quant,xx,yy,test_size,reg_cla):    
         random.seed(123)
         X=pd.DataFrame(data2[xx])
@@ -174,7 +174,7 @@ try:
     st.write(data2.head())
 
     ######################## 1) poly_reg ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def poly_reg(X_train,X_test,y_train,y_test):
             max_tr_r2_pr, max_te_r2_pr, max_deg=0,0,0
             tr_r2_pr1,te_r2_pr1=[],[] 
@@ -202,13 +202,13 @@ try:
             return pr_model_max,max_deg,y_test,max_tr_r2_pr,max_te_r2_pr,tr_r2_pr1,te_r2_pr1
 
     ######################## 2) decision_tree ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def decision_tree(X_train,X_test,y_train,y_test,n_splits,grid_search_dt):
         if grid_search_dt=='simple':
                 parameters={"regressor__splitter":["best"],
                     "regressor__max_depth" : [int(x) for x in np.linspace(2,15,10)],
-                  "regressor__min_samples_leaf":[int(x) for x in np.linspace(1,5,3)],
-                  "regressor__max_features":["auto"] }
+                    "regressor__min_samples_leaf":[int(x) for x in np.linspace(1,5,3)],
+                    "regressor__max_features":["auto"] }
                 cv=n_splits
                 dt = Pipeline([('scaler',  RobustScaler()),
                     ('regressor', DecisionTreeRegressor(random_state = 0))])
@@ -221,8 +221,8 @@ try:
         elif grid_search_dt=='exhaustive':
                 parameters={"regressor__splitter":["best","random"],
                     "regressor__max_depth" : [int(x) for x in np.linspace(2,15,12)],
-                  "regressor__min_samples_leaf":[int(x) for x in np.linspace(1,5,3)],
-                  "regressor__max_features":["auto","log2","sqrt",None] }
+                    "regressor__min_samples_leaf":[int(x) for x in np.linspace(1,5,3)],
+                    "regressor__max_features":["auto","log2","sqrt",'None'] }
                 cv=n_splits
 
                 dt = Pipeline([('scaler',  RobustScaler()),
@@ -241,143 +241,143 @@ try:
         return tuned_dt_model,tr_r2,te_r2,gs_dt.best_params_
 
     ######################## 3) random_forest ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def random_forest(X_train,X_test,y_train,y_test,n_splits,grid_search_rf):
-          if grid_search_rf=='simple':
-                      grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,3)],
-                          'criterion': ['friedman_mse'], 
-                          'max_features': ["auto"],  
-                          'min_samples_split': [int(x) for x in np.linspace(2,4,2)],
-                          "bootstrap"    : [False],
-                          'min_samples_leaf': [int(x) for x in np.linspace(1,2,2)]}
-                      cv=n_splits
+            if grid_search_rf=='simple':
+                        grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,3)],
+                            'criterion': ['friedman_mse'], 
+                            'max_features': ["auto"],  
+                            'min_samples_split': [int(x) for x in np.linspace(2,4,2)],
+                            "bootstrap"    : [False],
+                            'min_samples_leaf': [int(x) for x in np.linspace(1,2,2)]}
+                        cv=n_splits
 
-          elif grid_search_rf=='exhaustive':
-                      grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,6)],
-                          'criterion': ['friedman_mse', 'squared_error'], 
-                          'max_features': ["auto", "sqrt", "log2"],  
-                          'min_samples_split': [int(x) for x in np.linspace(2,4,2)],
-                          "bootstrap"    : [True, False],
-                          'min_samples_leaf': [int(x) for x in np.linspace(1,5,3)]}
-                      cv=n_splits
+            elif grid_search_rf=='exhaustive':
+                        grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,6)],
+                            'criterion': ['friedman_mse', 'squared_error'], 
+                            'max_features': ["auto", "sqrt", "log2"],  
+                            'min_samples_split': [int(x) for x in np.linspace(2,4,2)],
+                            "bootstrap"    : [True, False],
+                            'min_samples_leaf': [int(x) for x in np.linspace(1,5,3)]}
+                        cv=n_splits
 
-          rf1 = RandomForestRegressor(random_state=0)
-          gs_rf = RandomizedSearchCV(rf1, grid_rf,random_state=0, cv=cv, n_jobs=-1)
-          try:
-              import warnings
-              warnings.filterwarnings("error")
-              rf_model1=gs_rf.fit(X_train, y_train)
-          except:
-                  try:
-                      rf_model1=gs_rf.fit(X_train, y_train.values.ravel())
-                  except:
-                      st.write('Error')
-          rforest = RandomForestRegressor(n_estimators=gs_rf.best_params_['n_estimators'], criterion = gs_rf.best_params_['criterion'], max_features=gs_rf.best_params_['max_features'], 
-          min_samples_split=gs_rf.best_params_['min_samples_split'], min_samples_leaf=gs_rf.best_params_['min_samples_leaf'],bootstrap=gs_rf.best_params_['bootstrap'], random_state=0)
-          try:
+            rf1 = RandomForestRegressor(random_state=0)
+            gs_rf = RandomizedSearchCV(rf1, grid_rf,random_state=0, cv=cv, n_jobs=-1)
+            try:
+                import warnings
+                warnings.filterwarnings("error")
+                rf_model1=gs_rf.fit(X_train, y_train)
+            except:
+                    try:
+                        rf_model1=gs_rf.fit(X_train, y_train.values.ravel())
+                    except:
+                        st.write('Error')
+            rforest = RandomForestRegressor(n_estimators=gs_rf.best_params_['n_estimators'], criterion = gs_rf.best_params_['criterion'], max_features=gs_rf.best_params_['max_features'], 
+            min_samples_split=gs_rf.best_params_['min_samples_split'], min_samples_leaf=gs_rf.best_params_['min_samples_leaf'],bootstrap=gs_rf.best_params_['bootstrap'], random_state=0)
+            try:
                 import warnings
                 warnings.filterwarnings("error")
                 rfmodel=rforest.fit(X_train, y_train)
-          except:
+            except:
                 try:
                     rfmodel=rforest.fit(X_train, y_train.values.ravel())
                 except:
                     st.write('Error')
-          y_pred_test_rf = rfmodel.predict(X_test)
-          y_pred_train_rf = rfmodel.predict(X_train)
-          tr_r2_rf=r2_score(y_train, y_pred_train_rf)
-          te_r2_rf=r2_score(y_test, y_pred_test_rf)
+            y_pred_test_rf = rfmodel.predict(X_test)
+            y_pred_train_rf = rfmodel.predict(X_train)
+            tr_r2_rf=r2_score(y_train, y_pred_train_rf)
+            te_r2_rf=r2_score(y_test, y_pred_test_rf)
 
-          return rfmodel,tr_r2_rf,te_r2_rf,gs_rf.best_params_
+            return rfmodel,tr_r2_rf,te_r2_rf,gs_rf.best_params_
 
 
     ######################## 4) KNN Regressor ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def knnreg(X_train,X_test,y_train,y_test,n_splits):
-              cvk=n_splits
-              scaler = MinMaxScaler(feature_range=(0, 1))
-              params = {'n_neighbors':[int(x) for x in np.linspace(2,20,10)]}
-              y_train=pd.DataFrame(y_train)
-              x_train_scaled = scaler.fit_transform(X_train)
-              X_train = pd.DataFrame(x_train_scaled)
+                cvk=n_splits
+                scaler = MinMaxScaler(feature_range=(0, 1))
+                params = {'n_neighbors':[int(x) for x in np.linspace(2,20,10)]}
+                y_train=pd.DataFrame(y_train)
+                x_train_scaled = scaler.fit_transform(X_train)
+                X_train = pd.DataFrame(x_train_scaled)
 
-              x_test_scaled = scaler.fit_transform(X_test)
-              X_test = pd.DataFrame(x_test_scaled)
+                x_test_scaled = scaler.fit_transform(X_test)
+                X_test = pd.DataFrame(x_test_scaled)
 
-              knn = neighbors.KNeighborsRegressor()
+                knn = neighbors.KNeighborsRegressor()
 
-              model = RandomizedSearchCV(knn, params,random_state=0, cv=cvk,n_jobs=-1)
-              try:
+                model = RandomizedSearchCV(knn, params,random_state=0, cv=cvk,n_jobs=-1)
+                try:
                     model.fit(X_train,y_train)
-              except:
+                except:
                     try:
                         model.fit(X_train,y_train.values.ravel())
                     except:
                         st.write('Error')
-              tuned_knn_model=neighbors.KNeighborsRegressor(n_neighbors=model.best_params_['n_neighbors'])
-              try:
-                      tuned_knn_model.fit(X_train,y_train)
-              except:
+                tuned_knn_model=neighbors.KNeighborsRegressor(n_neighbors=model.best_params_['n_neighbors'])
+                try:
+                        tuned_knn_model.fit(X_train,y_train)
+                except:
                     try:
-                          tuned_knn_model.fit(X_train,y_train.values.ravel())
+                            tuned_knn_model.fit(X_train,y_train.values.ravel())
                     except:
-                          st.write('Error')
-              y_pred_test_knn=tuned_knn_model.predict(X_test)
-              y_pred_train_knn = tuned_knn_model.predict(X_train)
-              tr_r2_knn=r2_score(y_train, y_pred_train_knn)
-              te_r2_knn=r2_score(y_test, y_pred_test_knn)
+                            st.write('Error')
+                y_pred_test_knn=tuned_knn_model.predict(X_test)
+                y_pred_train_knn = tuned_knn_model.predict(X_train)
+                tr_r2_knn=r2_score(y_train, y_pred_train_knn)
+                te_r2_knn=r2_score(y_test, y_pred_test_knn)
 
-              return tuned_knn_model,tr_r2_knn,te_r2_knn,model.best_params_
+                return tuned_knn_model,tr_r2_knn,te_r2_knn,model.best_params_
 
     ######################## 5) Lasso Regressor ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def lasso(X_train,X_test,y_train,y_test,n_splits):
-              cvl=n_splits
-              y_train=pd.DataFrame(y_train)
-              model = MultiTaskLassoCV(cv=cvl, random_state=0, max_iter=-1,n_jobs=-1)
-              model.fit(X_train, y_train)
-              tuned_las_model=Lasso(alpha=model.alpha_)
-              tuned_las_model.fit(X_train, y_train)
-              y_pred_test_las=tuned_las_model.predict(X_test)
-              y_pred_train_las = tuned_las_model.predict(X_train)
-              tr_r2_las=r2_score(y_train, y_pred_train_las)
-              te_r2_las=r2_score(y_test, y_pred_test_las)
+                cvl=n_splits
+                y_train=pd.DataFrame(y_train)
+                model = MultiTaskLassoCV(cv=cvl, random_state=0, max_iter=-1,n_jobs=-1)
+                model.fit(X_train, y_train)
+                tuned_las_model=Lasso(alpha=model.alpha_)
+                tuned_las_model.fit(X_train, y_train)
+                y_pred_test_las=tuned_las_model.predict(X_test)
+                y_pred_train_las = tuned_las_model.predict(X_train)
+                tr_r2_las=r2_score(y_train, y_pred_train_las)
+                te_r2_las=r2_score(y_test, y_pred_test_las)
 
-              return tuned_las_model,tr_r2_las,te_r2_las,model.alpha_
+                return tuned_las_model,tr_r2_las,te_r2_las,model.alpha_
 
     ######################## 6) PLS Regressor ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def pls(X_train,X_test,y_train,y_test,n_splits):
-              cvp=n_splits
-              simplefilter(action='ignore', category=FutureWarning)
-              pls = PLSRegression()
-              params1={'n_components':[int(x) for x in np.linspace(1,10,10)]}
-              gs_pls=RandomizedSearchCV(pls, params1, random_state=0,cv = cvp,n_jobs=-1)
-              gs_pls.fit(scale(X_train),y_train)
-              tuned_pls_model=PLSRegression(n_components=gs_pls.best_params_['n_components'])
-              tuned_pls_model.fit(scale(X_train),y_train)
-              y_pred_test_pls=tuned_pls_model.predict(scale(X_test))
-              y_pred_train_pls = tuned_pls_model.predict(scale(X_train))
-              tr_r2_pls=r2_score(y_train, y_pred_train_pls)
-              te_r2_pls=r2_score(y_test, y_pred_test_pls)
+                cvp=n_splits
+                simplefilter(action='ignore', category=FutureWarning)
+                pls = PLSRegression()
+                params1={'n_components':[int(x) for x in np.linspace(1,10,10)]}
+                gs_pls=RandomizedSearchCV(pls, params1, random_state=0,cv = cvp,n_jobs=-1)
+                gs_pls.fit(scale(X_train),y_train)
+                tuned_pls_model=PLSRegression(n_components=gs_pls.best_params_['n_components'])
+                tuned_pls_model.fit(scale(X_train),y_train)
+                y_pred_test_pls=tuned_pls_model.predict(scale(X_test))
+                y_pred_train_pls = tuned_pls_model.predict(scale(X_train))
+                tr_r2_pls=r2_score(y_train, y_pred_train_pls)
+                te_r2_pls=r2_score(y_test, y_pred_test_pls)
 
-              return tuned_pls_model,tr_r2_pls,te_r2_pls,gs_pls.best_params_
+                return tuned_pls_model,tr_r2_pls,te_r2_pls,gs_pls.best_params_
 
     ######################## 7) Elastic Net Regressor ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def enet(X_train,X_test,y_train,y_test,n_splits):
-              cve=n_splits
-              enet_model = MultiTaskElasticNetCV(cv=cve,n_jobs=-1).fit(X_train, y_train)
-              tuned_enet_model= ElasticNet(alpha =enet_model.alpha_).fit(X_train, y_train)
-              y_pred_test_enet=tuned_enet_model.predict(X_test)
-              y_pred_train_enet = tuned_enet_model.predict(X_train)
-              tr_r2_enet=r2_score(y_train, y_pred_train_enet)
-              te_r2_enet=r2_score(y_test, y_pred_test_enet)
+                cve=n_splits
+                enet_model = MultiTaskElasticNetCV(cv=cve,n_jobs=-1).fit(X_train, y_train)
+                tuned_enet_model= ElasticNet(alpha =enet_model.alpha_).fit(X_train, y_train)
+                y_pred_test_enet=tuned_enet_model.predict(X_test)
+                y_pred_train_enet = tuned_enet_model.predict(X_train)
+                tr_r2_enet=r2_score(y_train, y_pred_train_enet)
+                te_r2_enet=r2_score(y_test, y_pred_test_enet)
 
-              return tuned_enet_model,tr_r2_enet,te_r2_enet,enet_model.alpha_
+                return tuned_enet_model,tr_r2_enet,te_r2_enet,enet_model.alpha_
     ######################################################################################################
         ######################## 1) logistic_regression ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def log_reg(X_train,X_test,y_train,y_test,n_splits):
             lmodel = LogisticRegression(max_iter=1000000)
             cv = KFold(n_splits=n_splits)
@@ -397,7 +397,7 @@ try:
             return tuned_model,y_pred_train_lr,y_pred_test_lr,gs_c.best_params_
 
     ######################## 2) knn classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def knn_cla(X_train,X_test,y_train,y_test,n_splits):
             scaler = MinMaxScaler(feature_range=(0, 1))
             params = {'n_neighbors':[int(x) for x in np.linspace(2,15,13)]}
@@ -419,19 +419,19 @@ try:
                     st.write('Error')
             tuned_knn_model=neighbors.KNeighborsClassifier(n_neighbors=model.best_params_['n_neighbors'])
             try:
-                  tuned_knn_model.fit(X_train,y_train.values.ravel())
+                    tuned_knn_model.fit(X_train,y_train.values.ravel())
             except:
                 try:
-                      tuned_knn_model.fit(X_train,y_train)
+                        tuned_knn_model.fit(X_train,y_train)
                 except:
-                      st.write('Error')
+                        st.write('Error')
             y_pred_test_knn=tuned_knn_model.predict(X_test)
             y_pred_train_knn = tuned_knn_model.predict(X_train)
 
             return tuned_knn_model,y_pred_train_knn,y_pred_test_knn,scaler,model.best_params_
 
     ######################## 3) gnb classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def gnb_cla(X_train,X_test,y_train,y_test,n_splits):
             gnb = GaussianNB()
             params = {'var_smoothing': np.logspace(0,-9, num=100)}
@@ -457,19 +457,19 @@ try:
             return tuned_model,y_pred_train_gnb,y_pred_test_gnb,gs_nb.best_params_
 
     ######################## 4) Decision Tree Classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def decision_tree_classifier(X_train,X_test,y_train,y_test,n_splits,grid_search_dt):
             if grid_search_dt=='simple':
                     parameters={"splitter":["best"],
                         "max_depth" : [int(x) for x in np.linspace(2,10,3)],
-                      "min_samples_leaf":[int(x) for x in np.linspace(1,2,2)],
-                      "max_features":["auto",None] }
+                        "min_samples_leaf":[int(x) for x in np.linspace(1,2,2)],
+                        "max_features":["auto",'None'] }
                     cv=n_splits
             elif grid_search_dt=='exhaustive':
                     parameters={"splitter":["best","random"],
                         "max_depth" : [int(x) for x in np.linspace(2,10,7)],
-                      "min_samples_leaf":[int(x) for x in np.linspace(1,3,3)],
-                      "max_features":["auto","log2","sqrt",None] }
+                        "min_samples_leaf":[int(x) for x in np.linspace(1,3,3)],
+                        "max_features":["auto","log2","sqrt",'None'] }
                     cv=n_splits
             try:
                     dt=DecisionTreeClassifier(random_state = 0)
@@ -485,50 +485,50 @@ try:
             return tuned_dt_model,y_pred_train_dt,y_pred_test_dt,gs_dt.best_params_
 
     ######################## 5) Random Forest Classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def random_forest_classifier(X_train,X_test,y_train,y_test,n_splits,grid_search_rf):
-          if grid_search_rf=='simple':
-                  grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,3)],
-                      'max_features': ["auto"],  
-                      'min_samples_split': [int(x) for x in np.linspace(2,3,2)],
-                      "bootstrap"    : [False],
-                      'min_samples_leaf': [int(x) for x in np.linspace(1,2,2)]}
-          elif grid_search_rf=='exhaustive': 
-                  grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,200,5)],
-                  'criterion': ['gini', 'entropy'], 
-                  'max_features': ["auto", "sqrt", "log2"],  
-                  'min_samples_split': [int(x) for x in np.linspace(2,3,2)],
-                  "bootstrap"    : [True, False],
-                  'min_samples_leaf': [int(x) for x in np.linspace(1,3,3)]}
-          cv=n_splits
-          y_train=pd.DataFrame(y_train)
-          rf1 = RandomForestClassifier(random_state=0)
-          gs_rf = RandomizedSearchCV(rf1, param_distributions=grid_rf, cv=cv, n_jobs=-1,random_state=0)
-          try:
-              import warnings
-              warnings.filterwarnings("error")
-              rf_model1=gs_rf.fit(X_train, y_train)
-          except:
-                  try:
-                      rf_model1=gs_rf.fit(X_train, y_train.values.ravel())
-                  except:
-                      st.warning('Error')
-          rforest = RandomForestClassifier(n_estimators=gs_rf.best_params_['n_estimators'], max_features=gs_rf.best_params_['max_features'], 
-          min_samples_split=gs_rf.best_params_['min_samples_split'], min_samples_leaf=gs_rf.best_params_['min_samples_leaf'],bootstrap=gs_rf.best_params_['bootstrap'], random_state=0)
-          try:
+            if grid_search_rf=='simple':
+                    grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,100,3)],
+                        'max_features': ["auto"],  
+                        'min_samples_split': [int(x) for x in np.linspace(2,3,2)],
+                        "bootstrap"    : [False],
+                        'min_samples_leaf': [int(x) for x in np.linspace(1,2,2)]}
+            elif grid_search_rf=='exhaustive': 
+                    grid_rf = {'n_estimators': [int(x) for x in np.linspace(10,200,5)],
+                    'criterion': ['gini', 'entropy'], 
+                    'max_features': ["auto", "sqrt", "log2"],  
+                    'min_samples_split': [int(x) for x in np.linspace(2,3,2)],
+                    "bootstrap"    : [True, False],
+                    'min_samples_leaf': [int(x) for x in np.linspace(1,3,3)]}
+            cv=n_splits
+            y_train=pd.DataFrame(y_train)
+            rf1 = RandomForestClassifier(random_state=0)
+            gs_rf = RandomizedSearchCV(rf1, param_distributions=grid_rf, cv=cv, n_jobs=-1,random_state=0)
+            try:
+                import warnings
+                warnings.filterwarnings("error")
+                rf_model1=gs_rf.fit(X_train, y_train)
+            except:
+                    try:
+                        rf_model1=gs_rf.fit(X_train, y_train.values.ravel())
+                    except:
+                        st.warning('Error')
+            rforest = RandomForestClassifier(n_estimators=gs_rf.best_params_['n_estimators'], max_features=gs_rf.best_params_['max_features'], 
+            min_samples_split=gs_rf.best_params_['min_samples_split'], min_samples_leaf=gs_rf.best_params_['min_samples_leaf'],bootstrap=gs_rf.best_params_['bootstrap'], random_state=0)
+            try:
                 rfmodel=rforest.fit(X_train, y_train)
-          except:
+            except:
                 try:
                     rfmodel=rforest.fit(X_train, y_train.values.ravel())
                 except:
                     st.warning('Error')
-          y_pred_test_rf = rfmodel.predict(X_test)
-          y_pred_train_rf = rfmodel.predict(X_train)
+            y_pred_test_rf = rfmodel.predict(X_test)
+            y_pred_train_rf = rfmodel.predict(X_train)
 
-          return rfmodel,y_pred_train_rf,y_pred_test_rf,gs_rf.best_params_
+            return rfmodel,y_pred_train_rf,y_pred_test_rf,gs_rf.best_params_
 
     ######################## 6) Support Vector Classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def svc(X_train,X_test,y_train,y_test,n_splits):
             scaler=MinMaxScaler()
             X_train=scaler.fit_transform(X_train)
@@ -550,16 +550,16 @@ try:
                 tuned_svc_model.fit(X_train,y_train.values.ravel())
             except:
                 try:
-                      tuned_svc_model.fit(X_train,y_train)
+                        tuned_svc_model.fit(X_train,y_train)
                 except:
-                      print('Error')
+                        print('Error')
             y_pred_test_svc =tuned_svc_model.predict(X_test)
             y_pred_train_svc = tuned_svc_model.predict(X_train)
 
             return tuned_svc_model,y_pred_train_svc,y_pred_test_svc,scaler,model.best_params_
 
     ######################## 8) Extra Trees Classifier ########################
-    @st.experimental_memo(suppress_st_warning=True)
+    @st.cache_data
     def et_cla(X_train,X_test,y_train,y_test,n_splits,grid_search_et):     
             import warnings
             warnings.filterwarnings("ignore")
@@ -575,9 +575,9 @@ try:
             et_model=gs_et.fit(X_train, y_train)
 
             tuned_et_model= ExtraTreesClassifier(n_estimators=gs_et.best_params_['n_estimators'],
-                                          max_depth=gs_et.best_params_['max_depth'],
-                                          min_samples_split=gs_et.best_params_['min_samples_split'],                                          
-                                          random_state=0)
+                                            max_depth=gs_et.best_params_['max_depth'],
+                                            min_samples_split=gs_et.best_params_['min_samples_split'],                                          
+                                            random_state=0)
 
             tuned_et_model.fit(X_train,y_train)  
 
@@ -643,11 +643,11 @@ try:
                 plt.plot(deg,tr_r2_pr1,label='Train R2')
                 plt.plot(deg,te_r2_pr1,label='Test R2')
                 for i in range(1,7):
-                      plt.text(i,tr_r2_pr1[i-1],'%.2f'%(tr_r2_pr1[i-1]),horizontalalignment='center',
-                      verticalalignment='top')
+                        plt.text(i,tr_r2_pr1[i-1],'%.2f'%(tr_r2_pr1[i-1]),horizontalalignment='center',
+                        verticalalignment='top')
                 for i in range(1,7):
-                     plt.text(i,te_r2_pr1[i-1],'%.2f'%(te_r2_pr1[i-1]),horizontalalignment='center',
-                     verticalalignment='bottom')
+                        plt.text(i,te_r2_pr1[i-1],'%.2f'%(te_r2_pr1[i-1]),horizontalalignment='center',
+                        verticalalignment='bottom')
                 plt.xlabel('Degree')
                 plt.ylabel('Train R2 & Test R2')
                 plt.title('Train and Test R2 vs Polynomial Degree')
@@ -656,7 +656,7 @@ try:
                 st.pyplot(plt)
                 count=0
                 uploaded_file1 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file1(uploaded_file1):
                         dat=csv.read_csv(uploaded_file1)
                         data2=dat.to_pandas()  
@@ -664,23 +664,23 @@ try:
                 if uploaded_file1 is not None:
                     X2=read_file1(uploaded_file1)
                     count+=1
-                    try:
-                        @st.experimental_memo
-                        def download_results1(X2,max_deg2,y_test2):
-                            p_reg2=LinearRegression()
-                            pf2=PolynomialFeatures(degree=max_deg2, include_bias=False)
-                            X_p2=pf2.fit_transform(X2)
-                            y_pred_pr_final=tuned_modelpr.predict(X_p2)
-                            y_pred_pr_final=pd.DataFrame(y_pred_pr_final,columns=y_test2.columns+'_pred')
-                            result1=pd.concat([X2,y_pred_pr_final],axis=1)
-                            return result1.to_csv().encode('utf-8')
+                    # try:
+                    @st.cache_data
+                    def download_results1(X2,max_deg2,y_test2):
+                        p_reg2=LinearRegression()
+                        pf2=PolynomialFeatures(degree=max_deg2, include_bias=False)
+                        X_p2=pf2.fit_transform(X2)
+                        y_pred_pr_final=tuned_modelpr.predict(X_p2)
+                        y_pred_pr_final=pd.DataFrame(y_pred_pr_final,columns=y_test2.columns+'_pred')
+                        result1=pd.concat([X2,y_pred_pr_final],axis=1)
+                        return result1.to_csv().encode('utf-8')
 
-                        result1=download_results1(X2,max_deg2,y_test2)
-                        st.success('Success')
-                        if result1 is not None:
-                            st.download_button(label='Download Predictions',data=result1,file_name='Polynomial_Reg_Predictions.csv',mime='text/csv')       
-                    except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                    result1=download_results1(X2,max_deg2,y_test2)
+                    st.success('Success')
+                    if result1 is not None:
+                        st.download_button(label='Download Predictions',data=result1,file_name='Polynomial_Reg_Predictions.csv',mime='text/csv')       
+                    # except:
+                    #     st.write('Check if the uploaded dataset column names are same as trained model input parameters')
 
                 else:
                     st.warning('Upload data for predictions')
@@ -695,37 +695,37 @@ try:
                 st.write('Decision Tree Test R2 Score: ', te_r2)
                 st.write('Decision Tree Regressor Best Parameters ',best_params)
                 with st.expander('Text Tree'):
-                  fname=[]
-                  for i in range(len(X_train.columns)):
-                       fname.append(X_train.columns[i])
-                  text_tree_1 = tree.export_text(tuned_dt_model1,feature_names=fname)
-                  st.text(text_tree_1)
+                    fname=[]
+                    for i in range(len(X_train.columns)):
+                        fname.append(X_train.columns[i])
+                    text_tree_1 = tree.export_text(tuned_dt_model1,feature_names=fname)
+                    st.text(text_tree_1)
 
                 count=0
                 uploaded_file2 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file2(uploaded_file2):
                     dat=csv.read_csv(uploaded_file2)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file2 is not None:
-                     X1=read_file2(uploaded_file2)
-                     count+=1
-                     try:
+                        X1=read_file2(uploaded_file2)
+                        count+=1
+                        # try:
                         tuned_dt_modelr=tuned_dt_model1
-                        @st.experimental_memo
+                        @st.cache_data
                         def download_results2(X1,y_test):
-                              y_pred_dt_final=tuned_dt_modelr.predict(X1)
-                              y_pred_dt_final=pd.DataFrame(y_pred_dt_final,columns=y_test.columns+'_pred')
-                              result2=pd.concat([X1,y_pred_dt_final],axis=1)
-                              return result2.to_csv().encode('utf-8')
+                                y_pred_dt_final=tuned_dt_modelr.predict(X1)
+                                y_pred_dt_final=pd.DataFrame(y_pred_dt_final,columns=y_test.columns+'_pred')
+                                result2=pd.concat([X1,y_pred_dt_final],axis=1)
+                                return result2.to_csv().encode('utf-8')
 
                         result2=download_results2(X1,y_test)
                         st.success('Success')
                         if result2 is not None:
                             st.download_button(label='Download Predictions',data=result2,file_name='Decision_Tree_Reg_Predictions.csv',mime='text/csv')       
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -741,28 +741,28 @@ try:
 
                 count=0
                 uploaded_file3 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file3(uploaded_file3):
                     dat=csv.read_csv(uploaded_file3)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file3 is not None:
-                     X1=read_file3(uploaded_file3)
-                     count+=1
-                     try:
-                        @st.experimental_memo
+                        X1=read_file3(uploaded_file3)
+                        count+=1
+                        # try:
+                        @st.cache_data
                         def download_results3(X1,y_test):
-                              y_pred_rf_final=tuned_rf_model.predict(X1)
-                              y_pred_rf_final=pd.DataFrame(y_pred_rf_final,columns=y_test.columns+'_pred')
-                              result3=pd.concat([X1,y_pred_rf_final],axis=1)
-                              return result3.to_csv().encode('utf-8')
+                                y_pred_rf_final=tuned_rf_model.predict(X1)
+                                y_pred_rf_final=pd.DataFrame(y_pred_rf_final,columns=y_test.columns+'_pred')
+                                result3=pd.concat([X1,y_pred_rf_final],axis=1)
+                                return result3.to_csv().encode('utf-8')
 
                         result3=download_results3(X1,y_test)
                         st.success('Success')
                         if result3 is not None:
                             st.download_button(label='Download Predictions',data=result3,file_name='Random_Forest_Reg_Predictions.csv',mime='text/csv')       
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -777,7 +777,7 @@ try:
 
                 count=0
                 uploaded_file4 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file4(uploaded_file4):
                     dat=csv.read_csv(uploaded_file4)
                     data2=dat.to_pandas()  
@@ -785,23 +785,23 @@ try:
                 if uploaded_file4 is not None:
                     X1=read_file4(uploaded_file4)
                     count+=1
-                    try:
-                        @st.experimental_memo
-                        def download_results4(X1,y_test):
-                                scaler = MinMaxScaler(feature_range=(0, 1))
-                                X11 = scaler.fit_transform(X1)
-                                X11=pd.DataFrame(X11)
-                                y_pred_knn_final=tuned_knn_model.predict(X11)
-                                y_pred_knn_final=pd.DataFrame(y_pred_knn_final,columns=y_test.columns+'_pred')
-                                result4=pd.concat([X1,y_pred_knn_final],axis=1)
-                                return result4.to_csv().encode('utf-8')
+                    # try:
+                    @st.cache_data
+                    def download_results4(X1,y_test):
+                            scaler = MinMaxScaler(feature_range=(0, 1))
+                            X11 = scaler.fit_transform(X1)
+                            X11=pd.DataFrame(X11)
+                            y_pred_knn_final=tuned_knn_model.predict(X11)
+                            y_pred_knn_final=pd.DataFrame(y_pred_knn_final,columns=y_test.columns+'_pred')
+                            result4=pd.concat([X1,y_pred_knn_final],axis=1)
+                            return result4.to_csv().encode('utf-8')
 
-                        result4=download_results4(X1,y_test)
-                        st.success('Success')
-                        if result4 is not None:
-                            st.download_button(label='Download Predictions',data=result4,file_name='KNN_Reg_Predictions.csv',mime='text/csv')       
-                    except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                    result4=download_results4(X1,y_test)
+                    st.success('Success')
+                    if result4 is not None:
+                        st.download_button(label='Download Predictions',data=result4,file_name='KNN_Reg_Predictions.csv',mime='text/csv')       
+                    # except:
+                    #     st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -816,7 +816,7 @@ try:
 
                 count=0
                 uploaded_file5 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file5(uploaded_file5):
                     dat=csv.read_csv(uploaded_file5)
                     data2=dat.to_pandas()  
@@ -824,20 +824,20 @@ try:
                 if uploaded_file5 is not None:
                     X1=read_file5(uploaded_file5)
                     count+=1
-                    try:
-                        @st.experimental_memo
-                        def download_results5(X1,y_test):
-                                y_pred_las_final=tuned_las_model.predict(X1)
-                                y_pred_las_final=pd.DataFrame(y_pred_las_final,columns=y_test.columns+'_pred')
-                                result5=pd.concat([X1,y_pred_las_final],axis=1)
-                                return result5.to_csv().encode('utf-8')
+                    # try:
+                    @st.cache_data
+                    def download_results5(X1,y_test):
+                            y_pred_las_final=tuned_las_model.predict(X1)
+                            y_pred_las_final=pd.DataFrame(y_pred_las_final,columns=y_test.columns+'_pred')
+                            result5=pd.concat([X1,y_pred_las_final],axis=1)
+                            return result5.to_csv().encode('utf-8')
 
-                        result5=download_results5(X1,y_test)
-                        st.success('Success')
-                        if result5 is not None:
-                            st.download_button(label='Download Predictions',data=result5,file_name='Lasso_Reg_Predictions.csv',mime='text/csv')       
-                    except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                    result5=download_results5(X1,y_test)
+                    st.success('Success')
+                    if result5 is not None:
+                        st.download_button(label='Download Predictions',data=result5,file_name='Lasso_Reg_Predictions.csv',mime='text/csv')       
+                    # except:
+                    #     st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')  
 
@@ -852,7 +852,7 @@ try:
 
                 count=0
                 uploaded_file6 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file6(uploaded_file6):
                     dat=csv.read_csv(uploaded_file6)
                     data2=dat.to_pandas()  
@@ -860,20 +860,20 @@ try:
                 if uploaded_file6 is not None:
                     X1=read_file6(uploaded_file6)
                     count+=1
-                    try:
-                        @st.experimental_memo
-                        def download_results6(X1,y_test):
-                                y_pred_pls_final=tuned_pls_model.predict(scale(X1))
-                                y_pred_pls_final=pd.DataFrame(y_pred_pls_final,columns=y_test.columns+'_pred')
-                                result6=pd.concat([X1,y_pred_pls_final],axis=1)
-                                return result6.to_csv().encode('utf-8')
+                    # try:
+                    @st.cache_data
+                    def download_results6(X1,y_test):
+                            y_pred_pls_final=tuned_pls_model.predict(scale(X1))
+                            y_pred_pls_final=pd.DataFrame(y_pred_pls_final,columns=y_test.columns+'_pred')
+                            result6=pd.concat([X1,y_pred_pls_final],axis=1)
+                            return result6.to_csv().encode('utf-8')
 
-                        result6=download_results6(X1,y_test)
-                        st.success('Success')
-                        if result6 is not None:
-                            st.download_button(label='Download Predictions',data=result6,file_name='PLS_Reg_Predictions.csv',mime='text/csv')       
-                    except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                    result6=download_results6(X1,y_test)
+                    st.success('Success')
+                    if result6 is not None:
+                        st.download_button(label='Download Predictions',data=result6,file_name='PLS_Reg_Predictions.csv',mime='text/csv')       
+                    # except:
+                    #     st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -888,7 +888,7 @@ try:
 
                 count=0
                 uploaded_file7 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file7(uploaded_file7):
                     dat=csv.read_csv(uploaded_file7)
                     data2=dat.to_pandas()  
@@ -896,20 +896,20 @@ try:
                 if uploaded_file7 is not None:
                     X1=read_file7(uploaded_file7)
                     count+=1
-                    try:
-                        @st.experimental_memo
-                        def download_results7(X1,y_test):
-                                y_pred_enet_final=tuned_enet_model.predict(X1)
-                                y_pred_enet_final=pd.DataFrame(y_pred_enet_final,columns=y_test.columns+'_pred')
-                                result7=pd.concat([X1,y_pred_enet_final],axis=1)
-                                return result7.to_csv().encode('utf-8')
+                    # try:
+                    @st.cache_data
+                    def download_results7(X1,y_test):
+                            y_pred_enet_final=tuned_enet_model.predict(X1)
+                            y_pred_enet_final=pd.DataFrame(y_pred_enet_final,columns=y_test.columns+'_pred')
+                            result7=pd.concat([X1,y_pred_enet_final],axis=1)
+                            return result7.to_csv().encode('utf-8')
 
-                        result7=download_results7(X1,y_test)
-                        st.success('Success')
-                        if result7 is not None:
-                            st.download_button(label='Download Predictions',data=result7,file_name='Elastic_Net_Reg_Predictions.csv',mime='text/csv')       
-                    except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                    result7=download_results7(X1,y_test)
+                    st.success('Success')
+                    if result7 is not None:
+                        st.download_button(label='Download Predictions',data=result7,file_name='Elastic_Net_Reg_Predictions.csv',mime='text/csv')       
+                    # except:
+                    #     st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -946,33 +946,33 @@ try:
 
                 count=0
                 uploaded_file11 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file1(uploaded_file11):
                     dat=csv.read_csv(uploaded_file11)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file11 is not None:
-                     X2=read_file1(uploaded_file11)
-                     count+=1
-                     tuned_modellr,y_test2=tuned_model,y_test
-                     try:
-                        @st.experimental_memo
+                        X2=read_file1(uploaded_file11)
+                        count+=1
+                        tuned_modellr,y_test2=tuned_model,y_test
+                        # try:
+                        @st.cache_data
                         def download_results1(X2,y_test2):
-                              y_pred_lr_final=tuned_modellr.predict(X2)
-                              y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
-                              result1=pd.concat([X2,y_pred_lr_final],axis=1)  
-                              y_pred_prob_lr_final=tuned_modellr.predict_proba(X2)
-                              y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
-                              result11=pd.concat([X2,y_pred_prob_lr_final],axis=1)
-                              return result1.to_csv().encode('utf-8'),result11.to_csv().encode('utf-8')
+                                y_pred_lr_final=tuned_modellr.predict(X2)
+                                y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
+                                result1=pd.concat([X2,y_pred_lr_final],axis=1)  
+                                y_pred_prob_lr_final=tuned_modellr.predict_proba(X2)
+                                y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
+                                result11=pd.concat([X2,y_pred_prob_lr_final],axis=1)
+                                return result1.to_csv().encode('utf-8'),result11.to_csv().encode('utf-8')
 
                         result1,result11=download_results1(X2,y_test2)
                         st.success('Success')
                         if result1 is not None and result11 is not None:
                             st.download_button(label='Download Predictions',data=result1,file_name='Logistic_Reg_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result11,file_name='Logistic_Reg_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1009,34 +1009,34 @@ try:
 
                 count=0
                 uploaded_file2 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file2(uploaded_file2):
                     dat=csv.read_csv(uploaded_file2)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file2 is not None:
-                     X2=read_file2(uploaded_file2)
-                     count+=1
-                     tuned_modellr,y_test2,scaler=tuned_knn_model,y_test,scaler
-                     try:
-                        @st.experimental_memo
+                        X2=read_file2(uploaded_file2)
+                        count+=1
+                        tuned_modellr,y_test2,scaler=tuned_knn_model,y_test,scaler
+                        # try:
+                        @st.cache_data
                         def download_results2(X2,y_test2):
-                              X22= scaler.fit_transform(X2)
-                              y_pred_lr_final=tuned_modellr.predict(X22)
-                              y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
-                              result2=pd.concat([X2,y_pred_lr_final],axis=1)
-                              y_pred_prob_lr_final=tuned_modellr.predict_proba(X22)
-                              y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
-                              result22=pd.concat([X2,y_pred_prob_lr_final],axis=1)
-                              return result2.to_csv().encode('utf-8'),result22.to_csv().encode('utf-8')
+                                X22= scaler.fit_transform(X2)
+                                y_pred_lr_final=tuned_modellr.predict(X22)
+                                y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
+                                result2=pd.concat([X2,y_pred_lr_final],axis=1)
+                                y_pred_prob_lr_final=tuned_modellr.predict_proba(X22)
+                                y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
+                                result22=pd.concat([X2,y_pred_prob_lr_final],axis=1)
+                                return result2.to_csv().encode('utf-8'),result22.to_csv().encode('utf-8')
 
                         result2,result22=download_results2(X2,y_test2)
                         st.success('Success')
                         if result2 is not None and result22 is not None:
                             st.download_button(label='Download Predictions',data=result2,file_name='KNN_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result22,file_name='KNN_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1072,33 +1072,33 @@ try:
 
                 count=0
                 uploaded_file3 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file3(uploaded_file3):
                     dat=csv.read_csv(uploaded_file3)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file3 is not None:
-                     X2=read_file3(uploaded_file3)
-                     count+=1
-                     tuned_modellr,y_test2=tuned_model,y_test
-                     try:
-                        @st.experimental_memo
+                        X2=read_file3(uploaded_file3)
+                        count+=1
+                        tuned_modellr,y_test2=tuned_model,y_test
+                        # try:
+                        @st.cache_data
                         def download_results3(X2,y_test2):
-                              y_pred_lr_final=tuned_modellr.predict(X2)
-                              y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
-                              result3=pd.concat([X2,y_pred_lr_final],axis=1)
-                              y_pred_prob_lr_final=tuned_modellr.predict_proba(X2)
-                              y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
-                              result33=pd.concat([X2,y_pred_prob_lr_final],axis=1)
-                              return result3.to_csv().encode('utf-8'),result33.to_csv().encode('utf-8')
+                                y_pred_lr_final=tuned_modellr.predict(X2)
+                                y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
+                                result3=pd.concat([X2,y_pred_lr_final],axis=1)
+                                y_pred_prob_lr_final=tuned_modellr.predict_proba(X2)
+                                y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
+                                result33=pd.concat([X2,y_pred_prob_lr_final],axis=1)
+                                return result3.to_csv().encode('utf-8'),result33.to_csv().encode('utf-8')
 
                         result3,result33=download_results3(X2,y_test2)
                         st.success('Success')
                         if result3 is not None and result33 is not None:
                             st.download_button(label='Download Predictions',data=result3,file_name='Gaussian_NB_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result33,file_name='Gaussian_NB_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1136,7 +1136,7 @@ try:
                 with st.expander('Text Tree'):
                     fname=[]
                     for i in range(len(X_train.columns)):
-                       fname.append(X_train.columns[i])
+                        fname.append(X_train.columns[i])
                     text_tree_1 = tree.export_text(tuned_dt_modelr,feature_names=fname)
                     fig = plt.figure(figsize=(25,20))
                     _ = tree.plot_tree(tuned_dt_modelr,feature_names=fname,filled=True)
@@ -1144,32 +1144,32 @@ try:
 
                 count=0
                 uploaded_file4 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file4(uploaded_file4):
                     dat=csv.read_csv(uploaded_file4)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file4 is not None:
-                     X1=read_file4(uploaded_file4)
-                     count+=1
-                     try:
-                        @st.experimental_memo
+                        X1=read_file4(uploaded_file4)
+                        count+=1
+                        # try:
+                        @st.cache_data
                         def download_results4(X1,y_test):
-                              y_pred_dt_final=tuned_dt_modelr.predict(X1)
-                              y_pred_dt_final=pd.DataFrame(y_pred_dt_final,columns=y_test.columns+'_pred')
-                              result4=pd.concat([X1,y_pred_dt_final],axis=1)
-                              y_pred_prob_lr_final=tuned_dt_modelr.predict_proba(X1)
-                              y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
-                              result44=pd.concat([X1,y_pred_prob_lr_final],axis=1)
-                              return result4.to_csv().encode('utf-8'),result44.to_csv().encode('utf-8')
+                                y_pred_dt_final=tuned_dt_modelr.predict(X1)
+                                y_pred_dt_final=pd.DataFrame(y_pred_dt_final,columns=y_test.columns+'_pred')
+                                result4=pd.concat([X1,y_pred_dt_final],axis=1)
+                                y_pred_prob_lr_final=tuned_dt_modelr.predict_proba(X1)
+                                y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
+                                result44=pd.concat([X1,y_pred_prob_lr_final],axis=1)
+                                return result4.to_csv().encode('utf-8'),result44.to_csv().encode('utf-8')
 
                         result4,result44=download_results4(X1,y_test)
                         st.success('Success')
                         if result4 is not None and result44 is not None:
                             st.download_button(label='Download Predictions',data=result4,file_name='Decision_Tree_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result44,file_name='Decision_Tree_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1206,16 +1206,16 @@ try:
 
                 count=0
                 uploaded_file5 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file5(uploaded_file5):
                     dat=csv.read_csv(uploaded_file5)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file5 is not None:
-                     X1=read_file5(uploaded_file5)
-                     count+=1
-                     try:
-                        @st.experimental_memo
+                        X1=read_file5(uploaded_file5)
+                        count+=1
+                        # try:
+                        @st.cache_data
                         def download_results5(X1,y_test):
                             y_pred_rf_final=tuned_rf_model.predict(X1)
                             y_pred_rf_final=pd.DataFrame(y_pred_rf_final,columns=y_test.columns+'_pred')
@@ -1230,8 +1230,8 @@ try:
                         if result5 is not None and result55 is not None:
                             st.download_button(label='Download Predictions',data=result5,file_name='Random_Forest_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result55,file_name='Random_Forest_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1267,34 +1267,34 @@ try:
 
                 count=0
                 uploaded_file6 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file6(uploaded_file6):
                     dat=csv.read_csv(uploaded_file6)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file6 is not None:
-                     X2=read_file6(uploaded_file6)
-                     count+=1
-                     y_test2=y_test
-                     try:
-                        @st.experimental_memo
+                        X2=read_file6(uploaded_file6)
+                        count+=1
+                        y_test2=y_test
+                        # try:
+                        @st.cache_data
                         def download_results6(X2,y_test2):
-                              X22= scaler.fit_transform(X2)
-                              y_pred_lr_final=tuned_modellr.predict(X22)
-                              y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
-                              result6=pd.concat([X2,y_pred_lr_final],axis=1)
-                              y_pred_prob_lr_final=tuned_modellr.predict_proba(X22)
-                              y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
-                              result66=pd.concat([X2,y_pred_prob_lr_final],axis=1)                        
-                              return result6.to_csv().encode('utf-8'),result66.to_csv().encode('utf-8')
+                                X22= scaler.fit_transform(X2)
+                                y_pred_lr_final=tuned_modellr.predict(X22)
+                                y_pred_lr_final=pd.DataFrame(y_pred_lr_final,columns=y_test2.columns+'_pred')
+                                result6=pd.concat([X2,y_pred_lr_final],axis=1)
+                                y_pred_prob_lr_final=tuned_modellr.predict_proba(X22)
+                                y_pred_prob_lr_final=pd.DataFrame(y_pred_prob_lr_final,columns=label)                                                                              
+                                result66=pd.concat([X2,y_pred_prob_lr_final],axis=1)                        
+                                return result6.to_csv().encode('utf-8'),result66.to_csv().encode('utf-8')
 
                         result6,result66=download_results6(X2,y_test2)
                         st.success('Success')
                         if result6 is not None and result66 is not None:
                             st.download_button(label='Download Predictions',data=result6,file_name='Support_Vector_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result66,file_name='Support_Vector_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
@@ -1331,37 +1331,38 @@ try:
 
                 count=0
                 uploaded_file8 = st.file_uploader("", type=["csv"],key=count)        
-                @st.experimental_memo
+                @st.cache_data
                 def read_file8(uploaded_file8):
                     dat=csv.read_csv(uploaded_file8)
                     data2=dat.to_pandas()  
                     return data2
                 if uploaded_file8 is not None:
-                     X2=read_file8(uploaded_file8)
-                     count+=1
-                     y_test2=y_test
-                     try:
-                        @st.experimental_memo
+                        X2=read_file8(uploaded_file8)
+                        count+=1
+                        y_test2=y_test
+                        # try:
+                        @st.cache_data
                         def download_results8(X2,y_test2):
-                              y_pred_et_final=tuned_et_model.predict(X2)
-                              y_pred_et_final=pd.DataFrame(y_pred_et_final,columns=y_test2.columns+'_pred')
-                              result8=pd.concat([X2,y_pred_et_final],axis=1)
-                              y_pred_prob_et_final=tuned_et_model.predict_proba(X2)
-                              y_pred_prob_et_final=pd.DataFrame(y_pred_prob_et_final,columns=label)                                                                              
-                              result88=pd.concat([X2,y_pred_prob_et_final],axis=1)                        
-                              return result8.to_csv().encode('utf-8'),result88.to_csv().encode('utf-8')
+                                y_pred_et_final=tuned_et_model.predict(X2)
+                                y_pred_et_final=pd.DataFrame(y_pred_et_final,columns=y_test2.columns+'_pred')
+                                result8=pd.concat([X2,y_pred_et_final],axis=1)
+                                y_pred_prob_et_final=tuned_et_model.predict_proba(X2)
+                                y_pred_prob_et_final=pd.DataFrame(y_pred_prob_et_final,columns=label)                                                                              
+                                result88=pd.concat([X2,y_pred_prob_et_final],axis=1)                        
+                                return result8.to_csv().encode('utf-8'),result88.to_csv().encode('utf-8')
 
                         result8,result88=download_results8(X2,y_test2)
                         st.success('Success')
                         if result8 is not None and result88 is not None:
                             st.download_button(label='Download Predictions',data=result8,file_name='Extra_Trees_Classifier_Predictions.csv',mime='text/csv')       
                             st.download_button(label='Download Probability Predictions',data=result88,file_name='Extra_Trees_Classifier_Probability_Predictions.csv',mime='text/csv')                                   
-                     except:
-                        st.write('Check if the uploaded dataset column names are same as trained model input parameters')
+                        # except:
+                        # st.write('Check if the uploaded dataset column names are same as trained model input parameters')
                 else:
                     st.warning('Upload data for predictions')
 
-except:
+except Exception as e:
+    st.warning(e)
     st.warning('Choose Something')
 
 st.write('')
